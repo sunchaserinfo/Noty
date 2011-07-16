@@ -69,7 +69,7 @@ class Noty
         {:action => nil}
       else
         result = Hash.new
-        m.names.each do |name|
+        m.keys.each do |name|
           result[name] = m[name]
         end
         result[:action] = :add_record
