@@ -83,7 +83,7 @@ class Noty
     sleep 1
     time = Time.now.to_i
     result = Array.new
-    Note.find_each(:conditions => 'timestamp <= ' + time) do |note|
+    Note.find_each(:conditions => ['timestamp <= ?', time]) do |note|
       result << [ note.user.jid, note.text ]
       note.destroy
     end
