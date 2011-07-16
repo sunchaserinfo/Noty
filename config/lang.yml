@@ -6,3 +6,6 @@ passed_date: Sorry, I can't go back in time.
 far_date: Bots don't live so long. T_T
 record_added: I'll remember this date.
 record_add_error: Can't remember this. And I don't really understand why! O_O
+misunderstand: |
+               Sorry, I didn't understand you. ^^"
+               Use "help" if you need.

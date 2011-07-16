@@ -116,20 +116,21 @@ class Noty
             parsed_dt += 3600*24 if parsed_dt < current_dt and not date_set and not date_del #FIXME
           end
           if time_del
+            #Set up time from delay
             n = 0
             if not m[:hourdel].nil?
               n += if m[:hourdel].empty?
-                    3600
-                  else
-                    m[:hourdel]*3600
-                  end
+                     3600
+                   else
+                     m[:hourdel]*3600
+                   end
             end
             if not m[:minutedel].nil?
               n += if m[:minutedel].empty?
-                    60
-                  else
-                    m[:minutedel]*60
-                  end
+                     60
+                   else
+                     m[:minutedel]*60
+                   end
             end
             parsed_dt += n #FIXME
           end
@@ -148,18 +149,36 @@ class Noty
   end
 
   def backend_func
+    sleep 1
+    time = Time.now.to_i
+    result = Array.new
+    Note.find_each(:conditions => 'timestamp >= ' + time) do |note|
+      result << [ note.user.jid, note.text ]
+      note.destroy
+    end
+    result
   end
 
-  def do_func(model, params)
+  def do_func(user, params)
     case params[:action]
     when :show_msg
       @lang[params[:msg]]
     when :add_record
-      if model.notes.create(:text => params[:msg], :timestamp => params[:timestamp])
+      if user.notes.create(:text => params[:msg], :timestamp => params[:timestamp])
         @lang['record_added']
       else
         @lang['record_add_error']
       end
+    when :show_records
+      result = []
+      id = 0
+      user.notes.each do |note|
+        id += 1
+        result << "#{id}. #{note.text}"
+      end
+      result.join("\n")
+    else
+      @lang['misunderstand']
     end
   end
 end
