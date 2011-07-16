@@ -69,7 +69,7 @@ class Noty
         {:action => nil}
       else
         result = Hash.new
-        m.keys.each do |name|
+        m.names.each do |name|
           result[name] = m[name]
         end
         result[:action] = :add_record
@@ -92,6 +92,7 @@ class Noty
   end
 
   def do_func(user, params)
+    puts 1
     case params[:action]
     when :show_msg
       @lang[params[:msg]]
