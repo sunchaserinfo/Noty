@@ -118,7 +118,7 @@ end
 
 case ARGV[0]
 when '--start'
-  Rumpy.start MyBot
+  Rumpy.start Noty
 when '--stop'
-  Rumpy.stop MyBot
+  Rumpy.stop Noty
 end
