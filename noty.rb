@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby1.9.1
+#!/usr/bin/env ruby19
 
 require 'rumpy'
 require 'rubygems'
@@ -6,7 +6,7 @@ require 'tzinfo'
 
 class Time
   def change(hash)
-    arr = []
+    arr = to_a
     hash.each do |h|
       case h[0]
       when :year
@@ -21,7 +21,7 @@ class Time
         arr[1] = h[1]
       end
     end
-    self.class.new *arr
+    self.class.gm *arr
   end
 end
 
@@ -92,7 +92,6 @@ class Noty
   end
 
   def do_func(user, params)
-    puts 1
     case params[:action]
     when :show_msg
       @lang[params[:msg]]
