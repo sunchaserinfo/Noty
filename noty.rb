@@ -68,80 +68,13 @@ class Noty
       if m.nil?
         {:action => nil}
       else
-        begin
-#           result = Hash.new
-#           m.names.each do |name|
-#             result[name] = m[name]
-#           end
-#           return result
-          year_set = date_set = time_set = date_del = time_del = false
-          year_set = true unless m[:year].nil?
-          date_set = true unless m[:day].nil?
-          time_set = true unless m[:hour].nil?
-          date_del = true unless m[:mdnum].nil? and m[:mdset].nil?
-          time_del = true unless m[:hourdel].nil? and m[:minutedel].nil?
-          current_dt = parsed_dt = Time.now
-          if date_set
-            #Retrieve full date
-            year = m[:year]
-            year = current_dt.year if year.nil?
-            year, month, day = year.to_i, m[:month].to_i, m[:day].to_i
-            year = 2000+year if year < 100
-            parsed_dt = parsed_dt.change :year => year, :month => month, :day => day
-            parsed_dt = parsed_dt.change :year => (year+1) if parsed_dt < current_dt and not year_set
-          elsif date_del
-            #Set up date from delay
-            n = if m[:mdnum].empty?
-                  1
-                else 
-                  m[:mdnum].to_i
-                end
-            n *= 7 if m[:mdset] == 'w' #weeks
-            n *= 3600*24 #FIXME!!!
-            parsed_dt += n
-          end
-          if time_set
-            #Retrieve full time
-            hour = m[:hour].to_i
-            raise if hour > 12 and m[:hourset] == 'p'
-            hour = 0 if hour == 12 and m[:hourset] == 'a' #EN style
-            hour += 12 if hour != 12 and m[:hourset] == 'p'
-            minute = if m[:minute].nil?
-                       0
-                     else
-                       m[:minute].to_i
-                     end
-            parsed_dt = parsed_dt.change :hour => hour, :minute => minute #minute doesn't work
-            parsed_dt += 3600*24 if parsed_dt < current_dt and not date_set and not date_del #FIXME
-          elsif time_del
-            #Set up time from delay
-            n = 0
-            if not m[:hourdel].nil?
-              n += if m[:hourdel].empty?
-                     3600
-                   else
-                     m[:hourdel].to_i*3600
-                   end
-            end
-            if not m[:minutedel].nil?
-              n += if m[:minutedel].empty?
-                     60
-                   else
-                     m[:minutedel].to_i*60
-                   end
-            end
-            parsed_dt += n #FIXME
-          end
-          if parsed_dt < current_dt
-            {:action => :show_msg, :msg => 'passed_date'}
-          elsif parsed_dt.to_i > 2147483647 # I really don't know better way here
-            {:action => :show_msg, :msg => 'far_date'}
-          else
-            {:action => :add_record, :timestamp => parsed_dt.to_i, :msg => opt}
-          end
-        rescue
-          {:action => :show_msg, :msg => 'wrong_date'}
+        result = Hash.new
+        m.names.each do |name|
+          result[name] = m[name]
         end
+        result[:action] = :add_record
+        result[:text] = opt
+        result
       end
     end
   end
@@ -177,12 +110,80 @@ class Noty
         @lang['wrong_tz']
       end
     when :add_record
-      text = params[:msg]
-      timestamp = params[:timestamp]
-      if user.notes.create(:text => text, :timestamp => timestamp)
-        @lang['record_added']
-      else
-        @lang['record_add_error']
+      begin
+        year_set = date_set = time_set = date_del = time_del = false
+        year_set = true unless params[:year].nil?
+        date_set = true unless params[:day].nil?
+        time_set = true unless params[:hour].nil?
+        date_del = true unless params[:mdnum].nil? and params[:mdset].nil?
+        time_del = true unless params[:hourdel].nil? and params[:minutedel].nil?
+        current_dt = parsed_dt = Time.now
+        if date_set
+          #Retrieve full date
+          year = params[:year]
+          year = current_dt.year if year.nil?
+          year, month, day = year.to_i, params[:month].to_i, params[:day].to_i
+          year = 2000+year if year < 100
+          parsed_dt = parsed_dt.change :year => year, :month => month, :day => day
+          parsed_dt = parsed_dt.change :year => (year+1) if parsed_dt < current_dt and not year_set
+        elsif date_del
+          #Set up date from delay
+          n = if params[:mdnum].empty?
+                1
+              else 
+                params[:mdnum].to_i
+              end
+          n *= 7 if params[:mdset] == 'w' #weeks
+          n *= 3600*24 #FIXME!!!
+          parsed_dt += n
+        end
+        if time_set
+          #Retrieve full time
+          hour = params[:hour].to_i
+          raise if hour > 12 and params[:hourset] == 'p'
+          hour = 0 if hour == 12 and params[:hourset] == 'a' #EN style
+          hour += 12 if hour != 12 and params[:hourset] == 'p'
+          minute = if params[:minute].nil?
+                     0
+                   else
+                     params[:minute].to_i
+                   end
+          parsed_dt = parsed_dt.change :hour => hour, :minute => minute #minute doesn't work
+          parsed_dt += 3600*24 if parsed_dt < current_dt and not date_set and not date_del #FIXME
+        elsif time_del
+          #Set up time from delay
+          n = 0
+          if not params[:hourdel].nil?
+            n += if params[:hourdel].empty?
+                   3600
+                 else
+                   params[:hourdel].to_i*3600
+                 end
+          end
+          if not params[:minutedel].nil?
+            n += if params[:minutedel].empty?
+                   60
+                 else
+                   params[:minutedel].to_i*60
+                 end
+          end
+          parsed_dt += n #FIXME
+        end
+        if parsed_dt < current_dt
+          @lang['passed_date']
+        elsif parsed_dt.to_i > 2147483647 # I really don't know better way here
+          @lang['far_date']
+        else
+          text = params[:msg]
+          timestamp = parsed_dt.to_i
+          if user.notes.create(:text => text, :timestamp => timestamp)
+            @lang['record_added']
+          else
+            @lang['record_add_error']
+          end
+        end
+      rescue
+        @lang['wrong_date']
       end
     when :show_records
       result = []
