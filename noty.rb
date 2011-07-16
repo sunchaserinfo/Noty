@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby19
+#!/usr/bin/env ruby1.9.1
 
 require 'rumpy'
 require 'rubygems'
@@ -111,6 +111,8 @@ class Noty
         @lang['wrong_tz']
       end
     when :add_record
+      return @lang['tz_not_set'] if user.timezone.nil?
+      tz = TZInfo::Timezone.get user.timezone
       begin
         year_set = date_set = time_set = date_del = time_del = false
         year_set = true unless params[:year].nil?
@@ -175,7 +177,7 @@ class Noty
         elsif parsed_dt.to_i > 2147483647 # I really don't know better way here
           @lang['far_date']
         else
-          text = params[:msg]
+          text = params[:text]
           timestamp = parsed_dt.to_i
           if user.notes.create(:text => text, :timestamp => timestamp)
             @lang['record_added']
