@@ -46,7 +46,13 @@ class Noty
     end
     case cmd.downcase
     when 'help'
-      {:action => :show_help, :topic => opt}
+      case opt
+      when tz
+        opt = 'help_tz'
+      else
+        opt = 'help'
+      end
+      {:action => :show_msg, :msg => opt}
     when 'tz'
       if opt.empty?
         {:action => :show_tz}
@@ -58,7 +64,7 @@ class Noty
     when 'list'
       {:action => :show_records}
     else
-      m = /^((((?<year>\d{4}|\d{2})-)?(?<month>\d{1,2})-(?<day>\d{1,2}))|((?<day2>\d{1,2})\.(?<month2>\d{1,2})(\.(?<year2>\d{2}|\d{4}))?)|((?<mdnum>\d*)\s*(?<mdset>d|w)))?\s*(((?<hour>\d{1,2})((:(?<minute>\d{1,2}))\s*((?<hourset>a|p)\.?m\.?)|(:(?<minute2>\d{1,2}))|((?<hourset2>a|p)\.?m\.?)))|(((?<hourdel>\d*)h)?\s*((?<minutedel>\d*)m)?))$/.match cmd
+      m = /^((((?<year>\d{4}|\d{2})-)?(?<month>\d{1,2})-(?<day>\d{1,2}))|((?<day>\d{1,2})\.(?<month>\d{1,2})(\.(?<year>\d{2}|\d{4}))?)|((?<mdnum>\d*)\s*(?<mdset>d|w)))?\s*(((?<hour>\d{1,2})((:(?<minute>\d{1,2}))\s*((?<hourset>a|p)\.?m\.?)|(:(?<minute>\d{1,2}))|((?<hourset>a|p)\.?m\.?)))|(((?<hourdel>\d*)h)?\s*((?<minutedel>\d*)m)?))$/.match cmd
       if m.nil?
         {:action => nil}
       else
@@ -68,27 +74,24 @@ class Noty
 #             result[name] = m[name]
 #           end
 #           return result
-          parsed_dt = Time.now
-          current_dt = Time.now
-          if not m[:day].nil?
-            #2000-10-10
+          year_set = date_set = time_set = date_del = time_del = false
+          year_set = true unless m[:year].nil?
+          date_set = true unless m[:day].nil?
+          time_set = true unless m[:hour].nil?
+          date_del = true unless m[:mdnum].nil? and m[:mdset].nil?
+          time_del = true unless m[:hourdel].nil? and m[:minutedel].nil?
+          current_dt = parsed_dt = Time.now
+          if date_set
+            #Try to retrieve full date
             year = m[:year]
             year = current_dt.year if year.nil?
-            month, day = m[:month], m[:day]
-          elsif not m[:day2].nil?
-            #10.10.2000
-            year = m[:year2]
-            year = current_dt.year if year.nil?
-            month, day = m[:month2], m[:day2]
-          end
-          year, month, day = year.to_i, month.to_i, day.to_i if not year.nil?
-          if not year.nil?
-            #2000-10-10, 10.10.2000
+            year, month, day = year.to_i, m[:month].to_i, m[:day].to_i
             year = 2000+year if year < 100
             parsed_dt = parsed_dt.change :year => year, :month => month, :day => day
-            parsed_dt = parsed_dt.change :year => (year+1) if parsed_dt < current_dt and m[:year].nil? and m[:year2].nil?
-          elsif not m[:mdset].nil?
-            #3 day, 3 week
+            parsed_dt = parsed_dt.change :year => (year+1) if parsed_dt < current_dt and not year_set
+          end
+          if date_del
+            #Set up date from delay
             n = if m[:mdnum].empty?
                   1
                 else 
@@ -98,43 +101,47 @@ class Noty
             n *= 3600*24 #FIXME!!!
             parsed_dt += n
           end
-#           if not m[:hour].nil?
-#             #12:15, 12p.m.
-#             if m[:minute] or m[:minute2] or m[:hourset2]
-#               hour = m[:hour]
-#               hourset = m[:hourset] if m[:hourset]
-#               hourset = m[:hourset2] unless hourset
-#               hour = 0 if hour == 12 and hourset == 'a'
-#               puts 'WRONG DATE' if hour > 12 and hourset == 'p' #FIXME
-#               hour += 12 if hour != 12 and hourset == 'p'
-#               minute = if m[:minute]
-#                       m[:minute].to_i
-#                     elsif m[:minute2]
-#                       m[:minute2].to_i
-#                     else
-#                       0
-#                     end
-#               parsed_dt.change :hour => hour
-#               parsed_dt.change :minute => minute
-#               parsed_dt += 3600*24 if parsed_dt < current_dt and m[:day].nil? and m[:day2].nil? and m[:mdset].nil? #FIXME
-#             end
-#           elsif m[:hourdel] or m[:minutedel]
-#             n = 0
-#             n += if m[:hourdel].empty?
-#                   3600
-#                 else
-#                   m[:hourdel]*3600
-#                 end
-#             n += if m[:minutedel].empty?
-#                   60
-#                 else
-#                   m[:minutedel]*60
-#                 end
-#             parsed_dt += n #FIXME
-#           end
-          {:action => :add_record, :time => parsed_dt, :msg => opt}
+          if time_set
+            #Try to retrieve full time
+            hour = m[:hour].to_i
+            raise if hour > 12 and m[:hourset] == 'p'
+            hour = 0 if hour == 12 and m[:hourset] == 'a' #EN style
+            hour += 12 if hour != 12 and m[:hourset] == 'p'
+            minute = if m[:minute].nil?
+                       0
+                     else
+                       m[:minute].to_i
+                     end
+            parsed_dt = parsed_dt.change :hour => hour, :minute => minute #minute doesn't work
+            parsed_dt += 3600*24 if parsed_dt < current_dt and not date_set and not date_del #FIXME
+          end
+          if time_del
+            n = 0
+            if not m[:hourdel].nil?
+              n += if m[:hourdel].empty?
+                    3600
+                  else
+                    m[:hourdel]*3600
+                  end
+            end
+            if not m[:minutedel].nil?
+              n += if m[:minutedel].empty?
+                    60
+                  else
+                    m[:minutedel]*60
+                  end
+            end
+            parsed_dt += n #FIXME
+          end
+          if parsed_dt < current_dt
+            {:action => :show_msg, :msg => 'passed_date'}
+          elsif parsed_dt.to_i > 5000000000
+            {:action => :show_msg, :msg => 'far_date'}
+          else
+            {:action => :add_record, :timestamp => parsed_dt.to_i, :msg => opt}
+          end
         rescue
-          {:action => :shit}
+          {:action => :show_msg, :msg => 'wrong_date'}
         end
       end
     end
@@ -144,7 +151,16 @@ class Noty
   end
 
   def do_func(model, params)
-    params.to_s
+    case params[:action]
+    when :show_msg
+      @lang[params[:msg]]
+    when :add_record
+      if model.notes.create(:text => params[:msg], :timestamp => params[:timestamp])
+        @lang['record_added']
+      else
+        @lang['record_add_error']
+      end
+    end
   end
 end
 

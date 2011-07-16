@@ -1,4 +1,8 @@
 hello: Hello. Please authorize me to start working.
 authorized: Now I'll remember you. Say `help` to find out more about me.
 stranger: Sorry, but I don't know you. Try to readd me into your roster.
-
+wrong_date: This datetime doesn't exist.
+passed_date: Sorry, I can't go back in time.
+far_date: Bots don't live so long. T_T
+record_added: I'll remember this date.
+record_add_error: Can't remember this. And I don't really understand why! O_O
