@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby1.9.1
+#!/usr/bin/env ruby19
 
 require 'rumpy'
 require 'rubygems'
@@ -47,7 +47,7 @@ class Noty
     case cmd.downcase
     when 'help'
       case opt
-      when tz
+      when 'tz'
         opt = 'help_tz'
       else
         opt = 'help'
@@ -83,7 +83,8 @@ class Noty
     sleep 1
     time = Time.now.to_i
     result = Array.new
-    Note.find_each(:conditions => 'timestamp <= ' + time) do |note|
+    Note.find_each(:conditions => ['timestamp <= ?', time]) do |note|
+      note.text = @lang['emptymessage'] if note.text.empty?
       result << [ note.user.jid, note.text ]
       note.destroy
     end

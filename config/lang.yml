@@ -18,3 +18,6 @@ record_add_error: Can't remember this. And I don't really understand why! O_O
 misunderstand:    |
                   Sorry, I didn't understand you. ^^"
                   Use `help` if you need.
+help:             adsfgbd
+help_tz:          asdfgsfsad
+emptymessage:     you told me to remember something
