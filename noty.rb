@@ -179,9 +179,10 @@ class Noty
         else
           text = params[:text]
           text = @lang['empty_message'] if text.is_empty?
-          timestamp = tz.local_to_utc(parsed_dt).to_i
+          parsed_dt = tz.local_to_utc parsed_dt
+          timestamp = parsed_dt.to_i
           if user.notes.create(:text => text, :timestamp => timestamp)
-            @lang['record_added']
+            @lang['record_added'] % parsed_dt.strftime('%Y-%m-%d %H:%M:%S')
           else
             @lang['record_add_error']
           end
