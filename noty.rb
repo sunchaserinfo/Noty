@@ -82,15 +82,14 @@ class Noty
           time_del = true unless m[:hourdel].nil? and m[:minutedel].nil?
           current_dt = parsed_dt = Time.now
           if date_set
-            #Try to retrieve full date
+            #Retrieve full date
             year = m[:year]
             year = current_dt.year if year.nil?
             year, month, day = year.to_i, m[:month].to_i, m[:day].to_i
             year = 2000+year if year < 100
             parsed_dt = parsed_dt.change :year => year, :month => month, :day => day
             parsed_dt = parsed_dt.change :year => (year+1) if parsed_dt < current_dt and not year_set
-          end
-          if date_del
+          elsif date_del
             #Set up date from delay
             n = if m[:mdnum].empty?
                   1
@@ -102,7 +101,7 @@ class Noty
             parsed_dt += n
           end
           if time_set
-            #Try to retrieve full time
+            #Retrieve full time
             hour = m[:hour].to_i
             raise if hour > 12 and m[:hourset] == 'p'
             hour = 0 if hour == 12 and m[:hourset] == 'a' #EN style
@@ -114,29 +113,28 @@ class Noty
                      end
             parsed_dt = parsed_dt.change :hour => hour, :minute => minute #minute doesn't work
             parsed_dt += 3600*24 if parsed_dt < current_dt and not date_set and not date_del #FIXME
-          end
-          if time_del
+          elsif time_del
             #Set up time from delay
             n = 0
             if not m[:hourdel].nil?
               n += if m[:hourdel].empty?
                      3600
                    else
-                     m[:hourdel]*3600
+                     m[:hourdel].to_i*3600
                    end
             end
             if not m[:minutedel].nil?
               n += if m[:minutedel].empty?
                      60
                    else
-                     m[:minutedel]*60
+                     m[:minutedel].to_i*60
                    end
             end
             parsed_dt += n #FIXME
           end
           if parsed_dt < current_dt
             {:action => :show_msg, :msg => 'passed_date'}
-          elsif parsed_dt.to_i > 5000000000
+          elsif parsed_dt.to_i > 2147483647 # I really don't know better way here
             {:action => :show_msg, :msg => 'far_date'}
           else
             {:action => :add_record, :timestamp => parsed_dt.to_i, :msg => opt}
@@ -152,7 +150,7 @@ class Noty
     sleep 1
     time = Time.now.to_i
     result = Array.new
-    Note.find_each(:conditions => 'timestamp >= ' + time) do |note|
+    Note.find_each(:conditions => 'timestamp <= ' + time) do |note|
       result << [ note.user.jid, note.text ]
       note.destroy
     end
@@ -164,7 +162,9 @@ class Noty
     when :show_msg
       @lang[params[:msg]]
     when :add_record
-      if user.notes.create(:text => params[:msg], :timestamp => params[:timestamp])
+      text = textparams[:msg]
+      timestamp = params[:timestamp]
+      if user.notes.create(:text => text, :timestamp => timestamp)
         @lang['record_added']
       else
         @lang['record_add_error']
