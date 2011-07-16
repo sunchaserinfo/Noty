@@ -161,8 +161,23 @@ class Noty
     case params[:action]
     when :show_msg
       @lang[params[:msg]]
+    when :show_tz
+      if user.timezone.nil?
+        @lang['tz_not_set']
+      else
+        user.timezone
+      end
+    when :set_tz
+      begin
+        tz = TZInfo::Timezone.get params[:tz]
+        user.timezone = tz.name
+        user.save
+        @lang['tz_set']
+      rescue
+        @lang['wrong_tz']
+      end
     when :add_record
-      text = textparams[:msg]
+      text = params[:msg]
       timestamp = params[:timestamp]
       if user.notes.create(:text => text, :timestamp => timestamp)
         @lang['record_added']
