@@ -20,4 +20,4 @@ misunderstand:    |
                   Use `help` if you need.
 help:             adsfgbd
 help_tz:          asdfgsfsad
-emptymessage:     You told me to remind of something.
+empty_message:     You told me to remind of something.

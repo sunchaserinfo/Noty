@@ -17,7 +17,7 @@ class Time
         arr[3] = h[1]
       when :hour
         arr[2] = h[1]
-      when :minute
+      when :min
         arr[1] = h[1]
       end
     end
@@ -64,7 +64,7 @@ class Noty
     when 'list'
       {:action => :show_records}
     else
-      m = /^((((?<year>\d{4}|\d{2})-)?(?<month>\d{1,2})-(?<day>\d{1,2}))|((?<day>\d{1,2})\.(?<month>\d{1,2})(\.(?<year>\d{2}|\d{4}))?)|((?<mdnum>\d*)\s*(?<mdset>d|w)))?\s*(((?<hour>\d{1,2})((:(?<minute>\d{1,2}))\s*((?<hourset>a|p)\.?m\.?)|(:(?<minute>\d{1,2}))|((?<hourset>a|p)\.?m\.?)))|(((?<hourdel>\d*)h)?\s*((?<minutedel>\d*)m)?))$/.match cmd
+      m = /^((((?<year>\d{4}|\d{2})-)?(?<month>\d{1,2})-(?<day>\d{1,2}))|((?<day>\d{1,2})\.(?<month>\d{1,2})(\.(?<year>\d{2}|\d{4}))?)|((?<mdnum>\d*)\s*(?<mdset>d|w)))?\s*(((?<hour>\d{1,2})((:(?<min>\d{1,2}))\s*((?<hourset>a|p)\.?m\.?)|(:(?<min>\d{1,2}))|((?<hourset>a|p)\.?m\.?)))|(((?<hourdel>\d*)h)?\s*((?<mindel>\d*)m)?))$/.match cmd
       if m.nil?
         {:action => nil}
       else
@@ -120,8 +120,8 @@ class Noty
         date_set = true unless params[:day].nil?
         time_set = true unless params[:hour].nil?
         date_del = true unless params[:mdnum].nil? and params[:mdset].nil?
-        time_del = true unless params[:hourdel].nil? and params[:minutedel].nil?
-        current_dt = parsed_dt = Time.now
+        time_del = true unless params[:hourdel].nil? and params[:mindel].nil?
+        current_dt = parsed_dt = tz.now
         if date_set
           #Retrieve full date
           year = params[:year]
@@ -147,12 +147,12 @@ class Noty
           raise if hour > 12 and params[:hourset] == 'p'
           hour = 0 if hour == 12 and params[:hourset] == 'a' #EN style
           hour += 12 if hour != 12 and params[:hourset] == 'p'
-          minute = if params[:minute].nil?
+          min = if params[:min].nil?
                      0
                    else
-                     params[:minute].to_i
+                     params[:min].to_i
                    end
-          parsed_dt = parsed_dt.change :hour => hour, :minute => minute #minute doesn't work
+          parsed_dt = parsed_dt.change :hour => hour, :min => min
           parsed_dt += 3600*24 if parsed_dt < current_dt and not date_set and not date_del #FIXME
         elsif time_del
           #Set up time from delay
@@ -164,11 +164,11 @@ class Noty
                    params[:hourdel].to_i*3600
                  end
           end
-          if not params[:minutedel].nil?
-            n += if params[:minutedel].empty?
+          if not params[:mindel].nil?
+            n += if params[:mindel].empty?
                    60
                  else
-                   params[:minutedel].to_i*60
+                   params[:mindel].to_i*60
                  end
           end
           parsed_dt += n #FIXME
@@ -179,7 +179,8 @@ class Noty
           @lang['far_date']
         else
           text = params[:text]
-          timestamp = parsed_dt.to_i
+          text = @lang['empty_message'] if text.is_empty?
+          timestamp = tz.local_to_utc(parsed_dt).to_i
           if user.notes.create(:text => text, :timestamp => timestamp)
             @lang['record_added']
           else
