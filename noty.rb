@@ -92,6 +92,7 @@ class Noty
   end
 
   def do_func(user, params)
+    puts 1
     case params[:action]
     when :show_msg
       @lang[params[:msg]]
