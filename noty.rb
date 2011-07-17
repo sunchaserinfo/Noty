@@ -71,6 +71,7 @@ class Noty
           result[symbol] = md[symbol] if md[symbol]
         end
 
+        # cause oniguruma for ruby18 cannot into same names for different groups, some hack here
         for symbol in [:year_, :month_, :day_] do
           result[symbol.to_s.tr('_', '').to_sym] = md[symbol].to_i if md[symbol]
         end
@@ -103,11 +104,7 @@ class Noty
 
   def tz(user, wut)
     if wut.empty?
-      if user.timezone
-        user.timezone
-      else
-        @lang['tz_not_set']
-      end
+      user.timezone || @lang['tz_not_set']
     else
       begin
         _tz = TZInfo::Timezone.get wut
@@ -122,6 +119,8 @@ class Noty
 
 
   def select_datetime(params, current)
+    prepare_pars_results params
+
     date_changed = true
 
     if params[:month] then
@@ -134,7 +133,7 @@ class Noty
           raise ArgumentError
         end
       end
-    elsif params[:dwdel] then
+    elsif params[:dwdel] then #if user sets the delay in days|weeks
       wanted = (current.to_date + params[:dwdel]).to_time
     else
       date_changed = false
@@ -149,7 +148,7 @@ class Noty
           wanted = wanted.to_datetime.next.to_time
         end
       end
-    elsif params[:del] then
+    elsif params[:del] then #if user sets delay in hours|minutes
       wanted += params[:del]
     end
 
@@ -157,7 +156,15 @@ class Noty
   end
 
   def prepare_pars_results(pars_results)
-    result = Hash.new
+    # after parsing, in pars_results we got next values
+    # dwdel --- the delay in days|weeks
+    # dwset --- if dwdel stands for delay in days or in weeks
+    # year  --- can be omitted, than curret year will be used
+    # month, day
+    # hour, (min) --- hour and optional (minute)
+    # ap --- p stands for p.m., a stands for a.m.. Can be nil
+    # hourdel --- delay in hours
+    # mindel --- delay in mimutes
 
     pars_results[:dwdel] *= 7 if pars_results[:dwset] == 'w'
 
@@ -177,6 +184,12 @@ class Noty
       pars_results[:del] ||= 0
       pars_results[:del]  += 60 * pars_results[:mindel]
     end
+
+    # now, the values in pars_results have slightly changed:
+    # dwdel set the delay in days
+    # if year was set by last 2 digits, it will be expanded
+    # hour is now in [0..23]
+    # del stands for delay in seconds
   end
 
 
@@ -187,7 +200,6 @@ class Noty
     else
       tz = TZInfo::Timezone.get user.timezone
       begin
-        prepare_pars_results params
         current = tz.now
 
         wanted = select_datetime params, current
