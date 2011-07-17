@@ -48,7 +48,7 @@ class Noty
 
     if spl[0] == 'help' then
       result[:action] = :help
-      spl[1]        ||= 'en'
+      spl[1]        ||= 'text'
       result[:wut]    = spl[1].strip
     elsif spl[0] == 'tz' then
       result[:action ] = :tz
@@ -71,7 +71,7 @@ class Noty
           result[symbol] = md[symbol] if md[symbol]
         end
 
-        # cause oniguruma for ruby18 cannot into same names for different groups, some hack here
+        # hack for ruby18 with oniguruma as a gem
         for symbol in [:year_, :month_, :day_] do
           result[symbol.to_s.tr('_', '').to_sym] = md[symbol].to_i if md[symbol]
         end
@@ -102,6 +102,48 @@ class Noty
     result
   end
 
+  def do_func(user, params)
+    case params[:action]
+    when :help
+      if params[:wut] == 'tz'
+        result = ''
+        TZInfo::Timezone.all.each { |tz| result << "#{tz.name}\n" }
+        result
+      else
+        @lang['help_' + params[:wut]] || @lang['misunderstand']
+      end
+    when :tz
+      tz user, params[:wut]
+    when :add
+      add user, params
+    when :list
+      result = ''
+      id = 0
+      user.notes.each do |note|
+        result << "#{id += 1}. #{Time.at(note.timestamp).strftime('%Y-%m-%d %H:%M:%S')} :: #{note.text}\n"
+      end
+      result
+    when :del
+      if params[:wut] == :all then
+        user.notes.clear
+        @lang['list_cleared']
+      else
+        id = 0
+        user.notes.each do |note|
+          break note.destroy if (id += 1) == params[:wut]
+        end
+
+        if id == params[:wut] then
+          @lang['deleted']
+        else
+          @lang['not_found']
+        end
+      end
+    else
+      @lang['misunderstand']
+    end
+  end
+  
   def tz(user, wut)
     if wut.empty?
       user.timezone || @lang['tz_not_set']
@@ -116,83 +158,6 @@ class Noty
       end
     end
   end
-
-
-  def select_datetime(params, current)
-    prepare_pars_results params
-
-    date_changed = true
-
-    if params[:month] then
-      params[:year] ||= current.year
-      wanted = current.change :year => params[:year], :month => params[:month], :day => params[:day]
-      if wanted < current then
-        if params[:year_omitted] then
-          wanted = wanted.change :year => (params[:year] + 1)
-        else
-          raise ArgumentError
-        end
-      end
-    elsif params[:dwdel] then #if user sets the delay in days|weeks
-      wanted = (current.to_date + params[:dwdel]).to_time
-    else
-      date_changed = false
-    end
-
-    if params[:hour] then
-      wanted = wanted.change :hour => params[:hour], :min => params[:min]
-      if wanted < current then
-        if date_changed then
-          raise ArgumentError, 'wrong date-time'
-        else
-          wanted = wanted.to_datetime.next.to_time
-        end
-      end
-    elsif params[:del] then #if user sets delay in hours|minutes
-      wanted += params[:del]
-    end
-
-    wanted
-  end
-
-  def prepare_pars_results(pars_results)
-    # after parsing, in pars_results we got next values
-    # dwdel --- the delay in days|weeks
-    # dwset --- if dwdel stands for delay in days or in weeks
-    # year  --- can be omitted, than curret year will be used
-    # month, day
-    # hour, (min) --- hour and optional (minute)
-    # ap --- p stands for p.m., a stands for a.m.. Can be nil
-    # hourdel --- delay in hours
-    # mindel --- delay in mimutes
-
-    pars_results[:dwdel] *= 7 if pars_results[:dwset] == 'w'
-
-    pars_results[:year] += 2000 if pars_results[:year] and pars_results[:year] < 100
-
-    pars_results[:year_omitted] = pars_results[:year].nil?
-
-    if pars_results[:hour]
-      raise ArgumentError if pars_results[:ap] == 'p' and pars_results[:hour] > 12
-      pars_results[:hour]   = 0 if pars_results[:ap] == 'a' and pars_results[:hour] == 12
-      pars_results[:hour]  += 12 if pars_results[:ap] == 'p' and pars_results[:hour] != 12
-      pars_results[:min]  ||= 0
-    end
-
-    pars_results[:del] = 3600 * pars_results[:hourdel] if pars_results[:hourdel]
-    if pars_results[:mindel] then
-      pars_results[:del] ||= 0
-      pars_results[:del]  += 60 * pars_results[:mindel]
-    end
-
-    # now, the values in pars_results have slightly changed:
-    # dwdel set the delay in days
-    # if year was set by last 2 digits, it will be expanded
-    # hour is now in [0..23]
-    # del stands for delay in seconds
-  end
-
-
 
   def add(user, params)
     if user.timezone.nil? then
@@ -222,40 +187,78 @@ class Noty
     end
   end
 
-  def do_func(user, params)
-    case params[:action]
-    when :help
-      @lang['help_' + params[:wut]]
-    when :tz
-      tz user, params[:wut]
-    when :add
-      add user, params
-    when :list
-      result = ""
-      id = 0
-      user.notes.each do |note|
-        result << "#{id += 1}. #{Time.at(note.timestamp).strftime('%Y-%m-%d %H:%M:%S')} :: #{note.text}\n"
-      end
-      result
-    when :del
-      if params[:wut] == :all then
-        user.notes.clear
-        @lang['list_cleared']
-      else
-        id = 0
-        user.notes.each do |note|
-          break note.destroy if (id += 1) == params[:wut]
-        end
+  def select_datetime(params, current)
+    prepare_pars_results params
 
-        if id == params[:wut] then
-          @lang['deleted']
+    date_changed = true
+
+    if params[:month] then
+      params[:year] ||= current.year
+      wanted = current.change :year => params[:year], :month => params[:month], :day => params[:day]
+      if wanted < current then
+        if params[:year_omitted] then
+          wanted = wanted.change :year => (params[:year] + 1)
         else
-          @lang['not_found']
+          raise ArgumentError
         end
       end
+    elsif params[:dwdel] then #if user sets the delay in days|weeks
+      wanted = (current.to_date + params[:dwdel]).to_time
     else
-      @lang['misunderstand']
+      date_changed = false
     end
+
+    if params[:hour] then
+      wanted = wanted.change :hour => params[:hour], :min => params[:min]
+      if wanted < current then
+        if date_changed then
+          raise ArgumentError
+        else
+          wanted = wanted.to_datetime.next.to_time
+        end
+      end
+    elsif params[:del] then #if user sets delay in hours|minutes
+      wanted += params[:del]
+    end
+
+    wanted
+  end
+
+  def prepare_pars_results(pars_results)
+    # after parsing we got next values in pars_results
+    # dwdel --- the delay in days|weeks
+    # dwset --- if dwdel stands for delay in days or in weeks
+    # year  --- can be omitted, than current year will be used
+    # month, day
+    # hour, (min) --- hour and minutes (optional)
+    # ap --- p stands for p.m., a stands for a.m.. Can be nil
+    # hourdel --- delay in hours
+    # mindel --- delay in minutes
+
+    pars_results[:dwdel] *= 7 if pars_results[:dwset] == 'w'
+
+    pars_results[:year] += 2000 if pars_results[:year] and pars_results[:year] < 100
+
+    pars_results[:year_omitted] = pars_results[:year].nil?
+
+    if pars_results[:hour]
+      raise ArgumentError if pars_results[:ap] == 'p' and pars_results[:hour] > 12
+      pars_results[:hour]   = 0 if pars_results[:ap] == 'a' and pars_results[:hour] == 12
+      pars_results[:hour]  += 12 if pars_results[:ap] == 'p' and pars_results[:hour] != 12
+      pars_results[:min]  ||= 0
+    end
+
+    pars_results[:del] = 3600 * pars_results[:hourdel] if pars_results[:hourdel]
+    if pars_results[:mindel] then
+      pars_results[:del] ||= 0
+      pars_results[:del]  += 60 * pars_results[:mindel]
+    end
+
+    # the values in pars_results have slightly changed now
+    # dwdel set the delay in days
+    # if year was set by last 2 digits, it will be expanded
+    # hour is now in [0..23]
+    # del stands for delay in seconds
   end
 end
 
