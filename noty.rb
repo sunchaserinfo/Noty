@@ -138,7 +138,7 @@ class Noty
       if params[:wut] == :all then
         user.notes.clear
         @lang['list_cleared']
-      else
+      elsif params[:wut] != 0
         id = 0
         user.notes.each do |note|
           break note.destroy if (id += 1) == params[:wut]
@@ -149,6 +149,8 @@ class Noty
         else
           @lang['not_found']
         end
+      else
+        @lang['misunderstand']
       end
     else
       @lang['misunderstand']

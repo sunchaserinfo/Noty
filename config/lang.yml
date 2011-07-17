@@ -15,13 +15,13 @@ passed_date:      Sorry, I can't go back in time.
 far_date:         Bots don't live so long. T_T
 record_added:     I'll remember this date %s.
 record_add_error: Can't remember this. And I don't really understand why. >_>
-misunderstand:    |
-                  Sorry, I didn't understand you. ^^"
-                  Use `help` if you need.
+record_not_found: |
+                  I have no record with such number.
+                  Use `list` to show all.
+record_deleted:   Forgotten!
 empty_message:    You told me to remind of something.
 list_cleared:     Your list is empty now.
 list_empty:       You haven't any record.
-deleted:          Forgotten!
 help_text:        |
                   To set the time when I'll send you a message use `datetime message_text` (`message_text` is optional). To see `datetime` format use `help format`.
                   To see records list use `list`.
@@ -46,3 +46,6 @@ help_format:      |
                   5m message: send a message after 5 minutes
                   2d 12h message: send a message after 2.5 days
                   w 10:15pm message: send a message after 7 days at 10:15 p.m.
+misunderstand:    |
+                  Sorry, I didn't understand you. ^^"
+                  Use `help` if you need.
