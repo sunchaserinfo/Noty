@@ -121,7 +121,9 @@ class Noty
   end
 
 
-  def change_date(params, current)
+  def select_datetime(params, current)
+    date_changed = true
+
     if params[:month] then
       params[:year] ||= current.year
       wanted = current.change :year => params[:year], :month => params[:month], :day => params[:day]
@@ -132,10 +134,26 @@ class Noty
           raise ArgumentError
         end
       end
-      wanted
     elsif params[:dwdel] then
       wanted = (current.to_date + params[:dwdel]).to_time
+    else
+      date_changed = false
     end
+
+    if params[:hour] then
+      wanted = wanted.change :hour => params[:hour], :min => params[:min]
+      if wanted < current then
+        if date_changed then
+          raise ArgumentError, 'wrong date-time'
+        else
+          wanted = wanted.to_datetime.next.to_time
+        end
+      end
+    elsif params[:del] then
+      wanted += params[:del]
+    end
+
+    wanted
   end
 
   def prepare_pars_results(pars_results)
@@ -161,21 +179,7 @@ class Noty
     end
   end
 
-  def change_time(params, current, wanted, date_changed)
-    if params[:hour] then
-      wanted = wanted.change :hour => params[:hour], :min => params[:min]
-      if wanted < current then
-        if date_changed then
-          raise ArgumentError, 'wrong date-time'
-        else
-          wanted = wanted.to_datetime.next.to_time
-        end
-      end
-      wanted
-    elsif params[:del] then
-      wanted += params[:del]
-    end
-  end
+
 
   def add(user, params)
     if user.timezone.nil? then
@@ -185,16 +189,8 @@ class Noty
       begin
         prepare_pars_results params
         current = tz.now
-        wanted = change_date params, current
-        date_changed = if wanted then
-                         true
-                       else
-                         wanted = current
-                         false
-                       end
 
-        wanted_ = change_time params, current, wanted, date_changed
-        wanted = wanted_ if wanted_
+        wanted = select_datetime params, current
 
         if wanted <= current then
           @lang['passed_date']
@@ -252,6 +248,8 @@ class Noty
 end
 
 case ARGV[0]
+when 'run'
+  Rumpy.run Noty
 when 'start'
   Rumpy.start Noty
 when 'stop'
