@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
-require 'rumpy'
 require 'rubygems'
+require 'rumpy'
 require 'tzinfo'
 require 'date'
 require 'oniguruma'
