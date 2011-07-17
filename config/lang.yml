@@ -20,7 +20,8 @@ misunderstand:    |
                   Use `help` if you need.
 empty_message:    You told me to remind of something.
 list_cleared:     Your list is empty now.
-deleted:          Deleted!
+list_empty:       You haven't any record.
+deleted:          Forgotten!
 help_text:        |
                   To set the time when I'll send you a message use `datetime message_text` (`message_text` is optional). To see `datetime` format use `help format`.
                   To see records list use `list`.

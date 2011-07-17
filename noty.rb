@@ -119,12 +119,21 @@ class Noty
     when :add
       add user, params
     when :list
-      result = ''
-      id = 0
-      user.notes.each do |note|
-        result << "#{id += 1}. #{Time.at(note.timestamp).strftime('%Y-%m-%d %H:%M:%S')} :: #{note.text}\n"
+      if user.timezone.nil? then
+        @lang['tz_not_set']
+      else
+        if user.notes.count == 0
+          @lang['list_empty']
+        else
+          result = ''
+          id = 0
+          tz = user.timezone
+          user.notes.each do |note|
+            result << "#{id += 1}. #{tz.utc_to_local(Time.at note.timestamp).strftime('%Y-%m-%d %H:%M:%S')} #{note.text}\n"
+          end
+          result
+        end
       end
-      result
     when :del
       if params[:wut] == :all then
         user.notes.clear
