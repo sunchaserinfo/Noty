@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby19
 
-require './rumpy.rb'
+require 'rumpy'
 require 'rubygems'
 require 'tzinfo'
 require 'date'
