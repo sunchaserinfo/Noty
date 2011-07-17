@@ -66,6 +66,7 @@ class Noty
     else
 
       md =  Addregexp.match m
+      if md then
         result[:action]   = :add
         for symbol in [:dwset, :ap, :message] do
           result[symbol] = md[symbol] if md[symbol]
@@ -86,6 +87,7 @@ class Noty
 
         result[:action] = nil unless result[:dwdel] or result[:day] or result[:hourdel] or
                               result[:mindel] or result[:hour] or result[:min]
+      end
     end
 
     result
