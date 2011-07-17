@@ -127,7 +127,7 @@ class Noty
         else
           result = ''
           id = 0
-          tz = user.timezone
+          tz = TZInfo::Timezone.get user.timezone
           user.notes.each do |note|
             result << "#{id += 1}. #{tz.utc_to_local(Time.at note.timestamp).strftime('%Y-%m-%d %H:%M:%S')} #{note.text}\n"
           end
