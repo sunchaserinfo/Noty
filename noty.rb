@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby19
+#!/usr/bin/env ruby
 
 require 'rumpy'
 require 'rubygems'
@@ -29,70 +29,56 @@ end
 class Noty
   include Rumpy::Bot
 
+  # Cool regexp
+  Addregexp = ORegexp.new '^((?<dwdel>\d*)(?<dwset>d|w)|((?<year>\d{2}|\d{4})-)?(?<month>\d{1,2})-(?<day>\d{1,2})|(?<day>\d{1,2})\.(?<month>\d{1,2})(\.(?<year>\d{2}|\d{4}))?)?\s*\b((?<hour>\d{1,2})(:(?<min>\d{1,2}))?\s*\b((?<ap>a|p)\.?m\.?)?|((?<hourdel>\d{1,2})h)?\s*\b((?<mindel>\d{1,2})m)?)\s*\b(?<message>.*)$'
+
   def initialize
     @config_path = 'config'
     @models_path = File.dirname(__FILE__) + '/models/*.rb'
     @main_model  = :user
   end
+
   def parser_func(m)
     m.strip!
-    result = Hash.new
-    addregexp = /^((?<dwdel>\d*)(?<dwset>d|w)|((?<year>\d{2}|\d{4})-)?(?<month>\d{1,2})-(?<day>\d{1,2})|(?<day>\d{1,2})\.(?<month>\d{1,2})(\.(?<year>\d{2}|\d{4}))?)?\s*\b((?<hour>\d{1,2})(:(?<min>\d{1,2}))?\s*\b((?<ap>a|p)\.?m\.?)?|((?<hourdel>\d{1,2})h)?\s*\b((?<mindel>\d{1,2})m)?)\s*\b(?<message>.*)$/
-    if /^help\s*(.*)$/.match m.downcase do |md|
-        result[:action] = :help
-        result[:wut]    = md[1].strip
-        result[:wut]    = 'en' if result[:wut].empty?
-        true
-      end
-    elsif /^tz\s*(.*)/.match m do |md|
-        result[:action] = :tz
-        result[:wut]    = md[1].strip
-      end
-    elsif m == 'list' then
-      result[:action] = :list
-    elsif /^del\s*(.*)/.match m.downcase do |md|
-        result[:action] = :del
-        if md[1] == '*' then
-          result[:wut] = :all
-        else
-          result[:wut]    = md[1].to_i
-        end
-      end
-    elsif addregexp.match m do |md|
-        result[:action]   = :add
-        unless md[:dwset].nil?
-          result[:daydel]   = if md[:dwdel].empty? then
-                                1
-                              else
-                                md[:dwdel].to_i
-                              end
-          result[:daydel]  *= 7 if md[:dwset] == 'w'
-        end
-        result[:year]     = md[:year].to_i    unless md[:year].nil?
-        result[:month]    = md[:month].to_i   unless md[:month].nil?
-        result[:day]      = md[:day].to_i     unless md[:day].nil?
-        unless md[:hourdel].nil?
-          result[:del]    = if md[:hourdel].empty? then
-                              3600
-                            else
-                              3600 * md[:hourdel].to_i
-                            end
-        end
-        unless md[:mindel].nil?
-          result[:del]  ||= 0
-          result[:del]  += if md[:mindel].empty? then
-                                60
-                              else
-                                60 * md[:mindel].to_i
-                              end
-        end
-        result[:hour]     = md[:hour].to_i    unless md[:hour].nil?
-        result[:min]      = md[:min].to_i     unless md[:min].nil?
-        result[:ap]       = md[:ap]
-        result[:msg]      = md[:message].strip
+    spl = m.split ' ', 2
+    spl[0].downcase!
 
-        result[:action] = nil if result[:daydel].nil? and result[:day].nil? and result[:del].nil? and result[:hour].nil? and result[:min].nil?
-    end
+    result = Hash.new
+
+    if spl[0] == 'help' then
+      result[:action] = :help
+      spl[1]        ||= 'en'
+      result[:wut]    = spl[1].strip
+    elsif spl[0] == 'tz' then
+      result[:action ] = :tz
+      spl[1]         ||= ''
+      result[:wut]     = spl[1].strip
+    elsif spl[0] == 'list' then
+      result[:action] = :list
+    elsif spl[0] == 'del' then
+      result[:action] = :del
+      result[:wut]    = if spl[1] == '*' then
+                          :all
+                        else
+                          spl[1].to_i
+                        end
+    elsif Addregexp.match m do |md|
+        result[:action]   = :add
+        for symbol in [:dwset, :ap, :message] do
+          result[symbol] = md[symbol] if mb[symbol]
+        end
+
+        for symbol in [:dwdel, :year, :month, :day, :hourdel, :mindel, :hour, :min] do
+          result[symbol] =  if md[symbol].empty? then
+                              1
+                            else
+                              md[symbol].to_i
+                            end if md[symbol]
+        end
+
+        result[:action] = nil unless result[:dwdel] or result[:day] or result[:hourdel] or
+                              result[:mindel] or result[:hour] or result[:min]
+      end
     end
 
     result
@@ -100,10 +86,9 @@ class Noty
 
   def backend_func
     sleep 1
-    time = Time.now.to_i
+    time   = Time.now.to_i
     result = Array.new
     Note.find_each(:conditions => ['timestamp <= ?', time]) do |note|
-      note.text = @lang['emptymessage'] if note.text.empty?
       result << [ note.user.jid, note.text ]
       note.destroy
     end
@@ -112,10 +97,10 @@ class Noty
 
   def tz(user, wut)
     if wut.empty?
-      if user.timezone.nil?
-        @lang['tz_not_set']
-      else
+      if user.timezone
         user.timezone
+      else
+        @lang['tz_not_set']
       end
     else
       begin
@@ -129,31 +114,49 @@ class Noty
     end
   end
 
+
   def change_date(params, current)
     if params[:month] then
-      year_omitted = params[:year].nil?
       params[:year] ||= current.year
-      params[:year] += 2000 if params[:year] < 100
       wanted = current.change :year => params[:year], :month => params[:month], :day => params[:day]
       if wanted < current then
-        if year_omitted then
+        if params[:year_omitted] then
           wanted = wanted.change :year => (params[:year] + 1)
         else
-          raise ArgumentError, 'wrong date'
+          raise ArgumentError
         end
       end
       wanted
-    elsif params[:daydel] then
-      wanted = (current.to_date + params[:daydel]).to_time
+    elsif params[:dwdel] then
+      wanted = (current.to_date + params[:dwdel]).to_time
     end
   end
 
-  def change_time(params, current, wanted, dc)
+  def prepare_pars_results(pars_results)
+    result = Hash.new
+
+    pars_results[:dwdel] *= 7 if pars_results[:dwset] == 'w'
+
+    pars_results[:year] += 2000 if pars_results[:year] and pars_results[:year] < 100
+
+    pars_results[:year_omitted] = pars_results[:year].nil?
+
+    if pars_results[:hour]
+      raise ArgumentError if pars_results[:ap] == 'p' and pars_results[:hour] > 12
+      pars_results[:hour]   = 0 if pars_results[:ap] == 'a' and pars_results[:hour] == 12
+      pars_results[:hour]  += 12 if pars_results[:ap] == 'p' and pars_results[:hour] != 12
+      pars_results[:min]  ||= 0
+    end
+
+    pars_results[:del] = 3600 * pars_results[:hourdel] if pars_results[:hourdel]
+    if pars_results[:mindel] then
+      pars_results[:del] ||= 0
+      pars_results[:del]  += 60 * pars_results[:mindel]
+    end
+  end
+
+  def change_time(params, current, wanted, date_changed)
     if params[:hour] then
-      raise ArgumentError, 'wrong hour' if params[:hour] > 12 and params[:ap] == 'p'
-      params[:hour] = 0 if params[:hour] == 12 and params[:ap] == 'a'
-      params[:hour] += 12 if params[:hour] != 12 and params[:ap] == 'p'
-      params[:min] ||= 0
       wanted = wanted.change :hour => params[:hour], :min => params[:min]
       if wanted < current then
         if date_changed then
@@ -174,17 +177,18 @@ class Noty
     else
       tz = TZInfo::Timezone.get user.timezone
       begin
+        prepare_pars_results params
         current = tz.now
         wanted = change_date params, current
-        date_changed = if wanted.nil? then
+        date_changed = if wanted then
+                         true
+                       else
                          wanted = current
                          false
-                       else
-                         true
                        end
 
         wanted_ = change_time params, current, wanted, date_changed
-        wanted = wanted_ unless wanted_.nil?
+        wanted = wanted_ if wanted_
 
         if wanted <= current then
           @lang['passed_date']
@@ -198,8 +202,8 @@ class Noty
             @lang['record_add_error']
           end
         end
-      rescue ArgumentError => e
-        @lang['wrong_date'] % e.message
+      rescue ArgumentError
+        @lang['wrong_date']
       end
     end
   end
