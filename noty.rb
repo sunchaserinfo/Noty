@@ -6,27 +6,6 @@ require 'tzinfo'
 require 'date'
 require 'oniguruma'
 
-class Time
-  def change(hash)
-    arr = to_a
-    hash.each do |h|
-      case h[0]
-      when :year
-        arr[5] = h[1]
-      when :month
-        arr[4] = h[1]
-      when :day
-        arr[3] = h[1]
-      when :hour
-        arr[2] = h[1]
-      when :min
-        arr[1] = h[1]
-      end
-    end
-    self.class.utc *arr
-  end
-end
-
 class Noty
   include Rumpy::Bot
 
@@ -94,7 +73,7 @@ class Noty
   end
 
   def backend_func
-    sleep 1
+    sleep 5
     time   = Time.now.to_i
     result = Array.new
     Note.find_each(:conditions => ['timestamp <= ?', time]) do |note|
@@ -145,7 +124,7 @@ class Noty
       @lang['misunderstand']
     end
   end
-  
+
   def tz(user, wut)
     if wut.empty?
       user.timezone || @lang['tz_not_set']
@@ -183,7 +162,7 @@ class Noty
             @lang['record_add_error']
           end
         end
-      rescue ArgumentError
+      rescue StandardError
         @lang['wrong_date']
       end
     end
