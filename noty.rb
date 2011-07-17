@@ -4,6 +4,7 @@ require 'rumpy'
 require 'rubygems'
 require 'tzinfo'
 require 'date'
+require 'oniguruma'
 
 class Time
   def change(hash)
@@ -30,7 +31,7 @@ class Noty
   include Rumpy::Bot
 
   # Cool regexp
-  Addregexp = ORegexp.new '^((?<dwdel>\d*)(?<dwset>d|w)|((?<year>\d{2}|\d{4})-)?(?<month>\d{1,2})-(?<day>\d{1,2})|(?<day>\d{1,2})\.(?<month>\d{1,2})(\.(?<year>\d{2}|\d{4}))?)?\s*\b((?<hour>\d{1,2})(:(?<min>\d{1,2}))?\s*\b((?<ap>a|p)\.?m\.?)?|((?<hourdel>\d{1,2})h)?\s*\b((?<mindel>\d{1,2})m)?)\s*\b(?<message>.*)$'
+  Addregexp = Oniguruma::ORegexp.new '^((?<dwdel>\d*)(?<dwset>d|w)|((?<year_>\d{2}|\d{4})-)?(?<month_>\d{1,2})-(?<day_>\d{1,2})|(?<day>\d{1,2})\.(?<month>\d{1,2})(\.(?<year>\d{2}|\d{4}))?)?\s*\b((?<hour>\d{1,2})(:(?<min>\d{1,2}))?\s*\b((?<ap>a|p)\.?m\.?)?|((?<hourdel>\d{1,2})h)?\s*\b((?<mindel>\d{1,2})m)?)\s*\b(?<message>.*)$'
 
   def initialize
     @config_path = 'config'
@@ -62,10 +63,16 @@ class Noty
                         else
                           spl[1].to_i
                         end
-    elsif Addregexp.match m do |md|
+    else
+
+      md =  Addregexp.match m
         result[:action]   = :add
         for symbol in [:dwset, :ap, :message] do
-          result[symbol] = md[symbol] if mb[symbol]
+          result[symbol] = md[symbol] if md[symbol]
+        end
+
+        for symbol in [:year_, :month_, :day_] do
+          result[symbol.to_s.tr('_', '').to_sym] = md[symbol].to_i if md[symbol]
         end
 
         for symbol in [:dwdel, :year, :month, :day, :hourdel, :mindel, :hour, :min] do
@@ -78,7 +85,6 @@ class Noty
 
         result[:action] = nil unless result[:dwdel] or result[:day] or result[:hourdel] or
                               result[:mindel] or result[:hour] or result[:min]
-      end
     end
 
     result
@@ -195,8 +201,8 @@ class Noty
         elsif wanted.to_i > 2147483647 then
           @lang['far_date']
         else
-          params[:msg] = @lang['empty_message'] if params[:msg].empty?
-          if user.notes.create :text => params[:msg], :timestamp => (tz.local_to_utc wanted).to_i then
+          params[:message] = @lang['empty_message'] if params[:message].empty?
+          if user.notes.create :text => params[:message], :timestamp => (tz.local_to_utc wanted).to_i then
             @lang['record_added'] % wanted.strftime('%Y-%m-%d %H:%M:%S')
           else
             @lang['record_add_error']
