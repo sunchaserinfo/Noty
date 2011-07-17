@@ -10,7 +10,7 @@ tz_not_set:       |
 wrong_tz:         |
                   There is no such timezone.
                   Use `help tz` to get the full list.
-wrong_date:       The datetime you have entered is WRONG (%s).
+wrong_date:       The datetime you have entered is wrong.
 passed_date:      Sorry, I can't go back in time.
 far_date:         Bots don't live so long. T_T
 record_added:     I'll remember this date %s.

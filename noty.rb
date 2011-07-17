@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby19
+#!/usr/bin/env ruby
 
 require 'rumpy'
 require 'rubygems'
@@ -37,7 +37,7 @@ class Noty
   def parser_func(m)
     m.strip!
     result = Hash.new
-    addregexp = /^((?<dwdel>\d*)(?<dwset>d|w)|((?<year>\d{2}|\d{4})-)?(?<month>\d{1,2})-(?<day>\d{1,2})|(?<day>\d{1,2})\.(?<month>\d{1,2})(\.(?<year>\d{2}|\d{4}))?)?\s*\b((?<hour>\d{1,2})(:(?<min>\d{1,2}))?\s*\b((?<ap>a|p)\.?m\.?)?|((?<hourdel>\d{1,2})h)?\s*\b((?<mindel>\d{1,2})m)?)\s*\b(?<message>.*)$/
+    addregexp = ORegexp.new '^((?<dwdel>\d*)(?<dwset>d|w)|((?<year>\d{2}|\d{4})-)?(?<month>\d{1,2})-(?<day>\d{1,2})|(?<day>\d{1,2})\.(?<month>\d{1,2})(\.(?<year>\d{2}|\d{4}))?)?\s*\b((?<hour>\d{1,2})(:(?<min>\d{1,2}))?\s*\b((?<ap>a|p)\.?m\.?)?|((?<hourdel>\d{1,2})h)?\s*\b((?<mindel>\d{1,2})m)?)\s*\b(?<message>.*)$', 'i', 'utf8'
     if /^help\s*(.*)$/.match m.downcase do |md|
         result[:action] = :help
         result[:wut]    = md[1].strip
