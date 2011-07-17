@@ -10,7 +10,7 @@ class Noty
   include Rumpy::Bot
 
   # Cool regexp
-  Addregexp = Oniguruma::ORegexp.new '^((?<dwdel>\d*)(?<dwset>d|w)|((?<year_>\d{2}|\d{4})-)?(?<month_>\d{1,2})-(?<day_>\d{1,2})|(?<day>\d{1,2})\.(?<month>\d{1,2})(\.(?<year>\d{2}|\d{4}))?)?\s*\b((?<hour>\d{1,2})(:(?<min>\d{1,2}))?\s*\b((?<ap>a|p)\.?m\.?)?|((?<hourdel>\d{1,2})h)?\s*\b((?<mindel>\d{1,2})m)?)\s*\b(?<message>.*)$', 'i', 'utf8'
+  Addregexp = Oniguruma::ORegexp.new '^((?<dwdel>\d*)(?<dwset>d|w)|((?<year_>\d{2}|\d{4})-)?(?<month_>\d{1,2})-(?<day_>\d{1,2})|(?<day>\d{1,2})\.(?<month>\d{1,2})(\.(?<year>\d{2}|\d{4}))?)?\s*\b((?<hour>\d{1,2})(:(?<min>\d{1,2}))?\s*\b((?<ap>a|p)\.?m\.?)?|((?<hourdel>\d+)h)?\s*\b((?<mindel>\d+)m)?)\s*\b(?<message>.*)$', 'i', 'utf8'
 
   def initialize
     @config_path = 'config'
