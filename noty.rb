@@ -1,6 +1,5 @@
 #!/usr/bin/env ruby
 
-require 'rubygems'
 require 'rumpy'
 require 'tzinfo'
 require 'date'
@@ -173,7 +172,7 @@ class Noty
             @lang['record_add_error']
           end
         end
-      rescue StandardError
+      rescue ArgumentError
         @lang['wrong_date']
       end
     end
