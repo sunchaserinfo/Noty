@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 
+require 'rubygems'
 require 'rumpy'
 require 'tzinfo'
 require 'date'
@@ -13,6 +14,7 @@ class Noty
 
   def initialize
     @config_path = 'config'
+    @err_log = 'noty.log'
     @models_path = File.dirname(__FILE__) + '/models/*.rb'
     @main_model  = :user
   end
