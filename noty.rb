@@ -14,7 +14,8 @@ class Noty
 
   def initialize
     @config_path = 'config'
-    @err_log = 'noty.log'
+    @log_file    = 'noty.log'
+    @log_level   = Logger::DEBUG
     @models_path = File.dirname(__FILE__) + '/models/*.rb'
     @main_model  = :user
   end
