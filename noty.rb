@@ -113,11 +113,9 @@ class Noty
       end
     when :help
       if params[:wut] == 'tz'
-        result = ''
-        TZInfo::Timezone.all.each do |tz|
+        TZInfo::Timezone.all.inject('') do |result, tz|
           result << "#{tz.name}\n"
         end
-        result
       else
         @lang['help_' + params[:wut]] || @lang['misunderstand']
       end
