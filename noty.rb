@@ -3,6 +3,7 @@
 require 'rubygems'
 require 'rumpy'
 require 'tzinfo'
+# for magic Time#change, Time#advance functions. Thx, active_support
 require 'active_support/core_ext/time/calculations'
 require 'oniguruma'
 
@@ -13,18 +14,13 @@ class Noty
   Addregexp = Oniguruma::ORegexp.new '^(((?<weeks>\d*)w)?\s*\b((?<days>\d*)d)?\s|((?<year_>\d{2}|\d{4})-)?(?<month_>\d{1,2})-(?<day_>\d{1,2})|(?<day>\d{1,2})\.(?<month>\d{1,2})(\.(?<year>\d{2}|\d{4}))?)?\s*\b((?<hour>\d{1,2})(:(?<min>\d{1,2}))?\s*\b((?<ap>a|p)\.?m\.?)?|((?<hours>\d*)h)?\s*\b((?<minutes>\d*)m)?)\s*\b(?<message>.*)$', 'i', 'utf8'
 
   def initialize
-    @config_path = 'config'
-    @log_file    = 'noty.log'
-    @log_level   = Logger::INFO
-    @models_path = File.dirname(__FILE__) + '/models/*.rb'
-    @main_model  = :user
+    @models_files = Dir[File.dirname(__FILE__) + '/models/*.rb']
   end
 
   def parser_func(m)
     m.strip!
     spl = m.split ' ', 2
     spl[0].downcase!
-    spl[1]
 
     result = Hash.new
 
@@ -55,17 +51,14 @@ class Noty
       if md then
         result[:action] = :add
 
-        for symbol in [:ap, :message] do
+        # this params are strings, simply copy them into result
+        [:ap, :message].each do |symbol|
           result[symbol] = md[symbol] if md[symbol]
         end
 
-        # hack for different date layouts (yy-mm-dd vs dd.mm.yy)
-        for symbol in [:year_, :month_, :day_] do
-          result[symbol.to_s.tr('_', '').to_sym] = md[symbol].to_i if md[symbol]
-        end
-
-        for symbol in [:days, :weeks, :year, :month, :day, :hours, :minutes,
-                       :hour, :min] do
+        # this params are integers, if ommiting of parameter is allowed in regexp, than
+        # consider that it equals 1
+        [:days, :weeks, :year, :month, :day, :hours, :minutes, :hour, :min].each do |symbol|
           result[symbol] =  if md[symbol].empty? then
                               1
                             else
@@ -73,6 +66,13 @@ class Noty
                             end if md[symbol]
         end
 
+        # hack for different date layouts (yy-mm-dd vs dd.mm.yy)
+        [:year_, :month_, :day_].each do |symbol|
+          result[symbol.to_s.tr('_', '').to_sym] = md[symbol].to_i if md[symbol]
+        end
+
+        # if all of those parameters are nil, than user haven't entered
+        # datetime correctly
         result[:action] = nil unless result[:days] or result[:weeks] or
                                      result[:day] or result[:hours] or
                                      result[:minutes] or result[:hour] or result[:min]
@@ -87,7 +87,7 @@ class Noty
     time   = Time.now.to_i
     result = Array.new
     Note.find_each(:conditions => ['timestamp <= ?', time]) do |note|
-      result << [ note.user.jid, note.text ] if note.user
+      result << [ note.user.jid, note.text ] if note.user # i have to check it
       note.destroy
     end
     result
@@ -102,12 +102,6 @@ class Noty
         "User::#{p.utime}\t\tSystem::#{p.stime}"
       when 'stat'
         "Users::#{User.count}\t\tNotes::#{Note.count}"
-      when 'users'
-        users = Array.new
-        User.find_each do |user|
-          users << "(#{user.jid}|#{user.notes.count})"
-        end
-        users.join ', '
       else
         @lang['misunderstand']
       end
@@ -218,7 +212,7 @@ class Noty
     # if selected date has past we must test, if year was omitted
     # if so, simply increase current year
     # else --- IT'S PROBLEM
-    if params[:year_omitted] then
+    if params[:year].nil? then
       wanted = wanted.next_year
     else
       raise ArgumentError
@@ -255,8 +249,6 @@ class Noty
 
     pars_results[:year] += 2000 if pars_results[:year] and pars_results[:year] < 100
 
-    pars_results[:year_omitted] = pars_results[:year].nil?
-
     if pars_results[:hour]
       raise ArgumentError if pars_results[:ap] == 'p' and pars_results[:hour] > 12
       pars_results[:hour]   = 0 if pars_results[:ap] == 'a' and pars_results[:hour] == 12
@@ -270,14 +262,15 @@ class Noty
   end
 end
 
+noty = Noty.new
 case ARGV[0]
 when 'run'
-  Rumpy.run Noty
+  Rumpy.run noty
 when 'start'
-  Rumpy.start Noty
+  Rumpy.start noty
 when 'stop'
-  Rumpy.stop Noty
+  Rumpy.stop noty
 when 'restart'
-  Rumpy.stop Noty
-  Rumpy.start Noty
+  Rumpy.stop noty
+  Rumpy.start noty
 end
