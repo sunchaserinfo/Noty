@@ -22,7 +22,7 @@ You can combine in any way next formats of date and time.
 ==== Date format
 
 * `+3d+', `+d+', `+2w+', `+w+' and `<tt>3w 3d</tt>' stand for `<em>in three days</em>', `<em>tomorrow</em>', `<em>in two weeks</em>', `<em>in a week</em>' and `<em>in three weeks and three days</em>'.
-* `<tt>08-11</tt>', `<tt>8-11</tt>', `<tt>11.08</tt>' and `<tt>11.8</tt>' stands for `<em>August 11th</em>'.
+* `<tt>08-11</tt>', `<tt>8-11</tt>', `<tt>11.08</tt>' and `<tt>11.8</tt>' stand for `<em>August 11th</em>'.
 * `<tt>2013-08-11</tt>', `<tt>13-8-11</tt>', `<tt>11.08.2013</tt>' and `<tt>11.8.13</tt>' stand for `<em>August 11th 2013</em>'.
 
 ==== Time format

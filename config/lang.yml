@@ -31,21 +31,22 @@ help_format:      |
                   Date format
                   2d: 2 days
                   2w: 14 days
-                  08-11, 8-11: 11 August
-                  2012-08-11, 12-08-11: 11 August 2012
+                  3w d: 22 days
+                  08-11, 8-11, 11.08, 11.8: 11 August
+                  2012-08-11, 12-08-11, 11.08.12, 11.8.2012: 11 August 2012
                   Time format
                   5m: 5minutes
                   2h: 2 hour 
                   1h 5m: 1 hour 5 minutes
-                  10 a.m., 10am: 10:00 a.m.
-                  10:15 p.m., 10:15pm: 10:15 p.m.
+                  10 a.m., 10 am: 10:00 a.m.
+                  10:15 p.m., 10:15 pm: 10:15 p.m.
                   06:05, 6:5: 06:05
                   Examples
                   h message: send a message after an hour (you can ommit 1 for all options)
                   10:00 message: if it's already 15:00 (for example), I'll send a message tomorrow at 10:00, otherwise today at 10:00
                   5m message: send a message after 5 minutes
                   2d 12h message: send a message after 2.5 days
-                  w 10:15pm message: send a message after 7 days at 10:15 p.m.
+                  w 10:15 pm message: send a message after 7 days at 10:15 p.m.
 misunderstand:    |
                   Sorry, I didn't understand you. ^^"
                   Use `help` if you need.
