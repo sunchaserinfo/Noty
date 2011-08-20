@@ -1,0 +1,53 @@
+= About Noty
+
+_Noty_ is small and cute xmpp bot, which can remind you of something important.
+Simply add {noty@ximik.net}[xmpp:noty@ximik.net] to your roster and start using it.
+
+= Usage
+
+== Timezones
+
+First of all, you have to set up your timezone. _Noty_ have to know your timezone because he is dealing with your localtime.
+To list all available timezones, simply send `<tt>help tz</tt>' to _Noty_.
+When you decided which timezone to select, just send, for example, `<tt>tz Europe/Kiev</tt>'.
+
+== Format
+
+To set the time of your notification send to _Noty_ `<tt>datetime message</tt>'. Message can be ommited.
+
+=== Datetime format
+
+You can combine in any way next formats of date and time.
+
+==== Date format
+
+* `+3d+', `+d+', `+2w+', `+w+' and `<tt>3w 3d</tt>' stand for `<em>in three days</em>', `<em>tomorrow</em>', `<em>in two weeks</em>', `<em>in a week</em>' and `<em>in three weeks and three days</em>'.
+* `<tt>08-11</tt>', `<tt>8-11</tt>', `<tt>11.08</tt>' and `<tt>11.8</tt>' stands for `<em>August 11th</em>'.
+* `<tt>2013-08-11</tt>', `<tt>13-8-11</tt>', `<tt>11.08.2013</tt>' and `<tt>11.8.13</tt>' stand for `<em>August 11th 2013</em>'.
+
+==== Time format
+
+* `+3m+', `+m+', `+5h+', `+h+' and `<tt>h 15m</tt>' stand for `<em>in three minutes</em>', `<em>after a minute</em>', `<em>in five hours</em>', `<em>after an hour</em>' and `<em>after an hour and quarter</em>'.
+* `+15+', `<tt>3 pm</tt>', `<tt>15:31</tt>' and `<tt>3:51 pm</tt>' stand for `<em>at 15:00</em>', `<em>at 3pm</em>', `<em>at 15:31</em>' and `<em>at 3:51 pm</em>'
+
+== List
+
+To print all your future notification, simply send `+list+' to _Noty_.
+
+== Delete record
+
+To delete record send `<tt>del record-number</tt>'. To delete all send `<tt>del *</tt>'
+
+= Starting your own Noty
+
+1. Prepare your database.
+2. Set parameters in `config' directory.
+3. Run
+
+= Contacts
+
+Feel free to contact us at GitHub, for example.
+
+= License
+
+_Noty_ is distributed under the MIT license
