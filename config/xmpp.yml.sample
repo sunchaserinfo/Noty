@@ -1,2 +1,4 @@
 jid: user@host.com/resource
 password: password
+status:   status
+priority: priority
