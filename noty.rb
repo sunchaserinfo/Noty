@@ -37,18 +37,14 @@ class Noty
       result[:action] = :list
     when 'del'
       result[:action] = :del
-      result[:wut]    = if spl[1] == '*' then
-                          :all
-                        else
-                          spl[1].to_i
-                        end
+      result[:wut]    = if spl[1] == '*' then :all else spl[1].to_i end
     when 'debug'
       result[:action] = :debug
       result[:wut] = spl[1]
     else
 
       md = Addregexp.match m
-      if md then
+      if md
         result[:action] = :add
 
         # this params are strings, simply copy them into result
@@ -59,7 +55,7 @@ class Noty
         # this params are integers, if ommiting of parameter is allowed in regexp, than
         # consider that it equals 1
         [:days, :weeks, :year, :month, :day, :hours, :minutes, :hour, :min].each do |symbol|
-          result[symbol] =  if md[symbol].empty? then
+          result[symbol] =  if md[symbol].empty?
                               1
                             else
                               md[symbol].to_i
@@ -73,9 +69,9 @@ class Noty
 
         # if all of those parameters are nil, than user haven't entered
         # datetime correctly
-        result[:action] = nil unless result[:days] or result[:weeks] or
-                                     result[:day] or result[:hours] or
-                                     result[:minutes] or result[:hour] or result[:min]
+        result[:action] = nil unless result[:days] || result[:weeks] ||
+                                     result[:day] || result[:hours] ||
+                                     result[:minutes] || result[:hour] || result[:min]
       end
     end
 
@@ -118,7 +114,7 @@ class Noty
     when :add
       add user, params
     when :list
-      if user.timezone.nil? then
+      if user.timezone.nil?
         @lang['tz_not_set']
       else
         if user.notes.empty?
@@ -136,7 +132,7 @@ class Noty
         end
       end
     when :del
-      if params[:wut] == :all then
+      if params[:wut] == :all
         user.notes.destroy_all
         @lang['list_cleared']
       elsif params[:wut] != 0
@@ -145,7 +141,7 @@ class Noty
           break note.destroy if (id += 1) == params[:wut]
         end
 
-        if id == params[:wut] then
+        if id == params[:wut]
           @lang['record_deleted']
         else
           @lang['record_not_found']
@@ -174,7 +170,7 @@ class Noty
   end
 
   def add(user, params)
-    if user.timezone.nil? then
+    if user.timezone.nil?
       @lang['tz_not_set']
     else
       tz = TZInfo::Timezone.get user.timezone
@@ -183,14 +179,12 @@ class Noty
 
         wanted = select_datetime params, current
 
-        if wanted <= current then
+        if wanted <= current
           @lang['passed_date']
-        elsif wanted.to_i > 2147483647 then
-          @lang['far_date']
         else
           params[:message] = @lang['empty_message'] if params[:message].empty?
           if user.notes.create  :text => params[:message],
-                                :timestamp => tz.local_to_utc(wanted).to_i then
+                                :timestamp => tz.local_to_utc(wanted).to_i
             @lang['record_added'] % wanted.strftime('%Y-%m-%d %H:%M:%S')
           else
             @lang['record_add_error']
@@ -212,7 +206,7 @@ class Noty
     # if selected date has past we must test, if year was omitted
     # if so, simply increase current year
     # else --- IT'S PROBLEM
-    if params[:year].nil? then
+    if params[:year].nil?
       wanted = wanted.next_year
     else
       raise ArgumentError
@@ -227,7 +221,7 @@ class Noty
     # if selected time has past we must test, have we changed date before
     # if so then IT'S PROBLEM because user definitely types wrong datetime
     # else increase day
-    if date_changed then
+    if date_changed
       raise ArgumentError
     else
       wanted = wanted.tomorrow
@@ -247,12 +241,12 @@ class Noty
     # hours --- delay in hours
     # minutes --- delay in minutes
 
-    pars_results[:year] += 2000 if pars_results[:year] and pars_results[:year] < 100
+    pars_results[:year] += 2000 if pars_results[:year] && pars_results[:year] < 100
 
     if pars_results[:hour]
-      raise ArgumentError if pars_results[:ap] == 'p' and pars_results[:hour] > 12
-      pars_results[:hour]   = 0 if pars_results[:ap] == 'a' and pars_results[:hour] == 12
-      pars_results[:hour]  += 12 if pars_results[:ap] == 'p' and pars_results[:hour] != 12
+      raise ArgumentError if pars_results[:ap] == 'p' && pars_results[:hour] > 12
+      pars_results[:hour]   = 0 if pars_results[:ap] == 'a' && pars_results[:hour] == 12
+      pars_results[:hour]  += 12 if pars_results[:ap] == 'p' && pars_results[:hour] != 12
       pars_results[:min]  ||= 0
     end
 
