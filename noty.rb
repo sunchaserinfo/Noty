@@ -5,13 +5,12 @@ require 'rumpy'
 require 'tzinfo'
 # for magic Time#change, Time#advance functions. Thx, active_support
 require 'active_support/core_ext/time/calculations'
-require 'oniguruma'
 
 class Noty
   include Rumpy::Bot
 
   # Cool regexp
-  Addregexp = Oniguruma::ORegexp.new '^(((?<weeks>\d*)w)?\s*\b((?<days>\d*)d)?\s|((?<year_>\d{2}|\d{4})-)?(?<month_>\d{1,2})-(?<day_>\d{1,2})|(?<day>\d{1,2})\.(?<month>\d{1,2})(\.(?<year>\d{2}|\d{4}))?)?\s*\b((?<hour>\d{1,2})(:(?<min>\d{1,2}))?\s*\b((?<ap>a|p)\.?m\.?)?|((?<hours>\d*)h)?\s*\b((?<minutes>\d*)m)?)\s*\b(?<message>.*)$', 'i', 'utf8'
+  Addregexp = /^(((?<weeks>\d*)w)?\s*\b((?<days>\d*)d)?\s|((?<year_>\d{2}|\d{4})-)?(?<month_>\d{1,2})-(?<day_>\d{1,2})|(?<day>\d{1,2})\.(?<month>\d{1,2})(\.(?<year>\d{2}|\d{4}))?)?\s*\b((?<hour>\d{1,2})(:(?<min>\d{1,2}))?\s*\b((?<ap>a|p)\.?m\.?)?|((?<hours>\d*)h)?\s*\b((?<minutes>\d*)m)?)\s*\b(?<message>.*)$/i
 
   def initialize
     @models_files = Dir[File.dirname(__FILE__) + '/models/*.rb']
